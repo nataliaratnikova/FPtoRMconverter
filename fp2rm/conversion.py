@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup, element
 import sys
 import argparse
 import os.path
+import os
+
 class BadHTML(Exception):
     def __init__(self, value):
         self.value = value
@@ -29,12 +31,16 @@ class WikiFromSoup:
         ## Write this out 
         open("%s" % self.outfile, 'w').write(self.textile+"\n")
 
+###  Functions to get HTML document contents:
+
 def soup_from_file(fname):
     fin = open(fname, mode='r')
     return BeautifulSoup(fin, 'html.parser')
 
 def soup_from_text(txt):
     return BeautifulSoup(txt, 'html.parser')
+
+### Document manipulation functions
 
 def clear_blank_lines(doc):
     ''' Removes useless contents containing just blank lines 
@@ -58,7 +64,10 @@ def get_document_title (doc):
         try:
             return doc.html.head.title
         except:
-            print "could not find title tag"
+            print "Warning: document has no title\n Using first line of page text."
+            for s in doc.body.contents:
+                if s.string.strip():
+                    return s.string.strip()
             return None
 
 def main(args):
@@ -70,6 +79,13 @@ def main(args):
         help='Where the results should go',
         default = '/tmp/fp2rm')
     opts = ap.parse_args(args)
+    if opts.outdir:
+        try:
+            os.mkdir(opts.outdir)
+        except OSError:
+            print ("Creation of the directory %s failed" % opts.outdir)
+        else:
+            print ("Successfully created the directory %s " % opts.outdir)
     if opts.file:
         print "Converting file:  ", opts.file
         document = soup_from_file(opts.file)
