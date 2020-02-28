@@ -56,7 +56,8 @@ can be easily extended to remove more special characters'''
 
 def plain_text(txt):
     '''removes repeated whitespaces, new lines from text'''
-    txt   = txt.replace('\n', ' ').strip()
+    # Remove also MS windows left-overs (carriage return)
+    txt   = txt.replace('\r', ' ').replace('\n', ' ').strip()
     clist = [c for c in txt if c != "\'"]
     result=[]
     previous=''
@@ -224,36 +225,16 @@ def parseA(tagElement, o, offset):
       # and let the browser serve it accordingly
       if target[:4] == 'http':
         print "NR: link to external document, as target starts with http."
-        o.addText(' "%s":%s ' % (clean_new_lines_from_text(tagElement.get_text().strip()),target))
+        #o.addText(' "%s":%s ' % (clean_new_lines_from_text(tagElement.get_text().strip()),target))
+        o.addText(' "%s":%s ' % (plain_text(tagElement.get_text()),target))
         return
       else:
         print "NR: this is a link to internal document, using local file path"
-        o.addText('":%s ' % os.path.join(o.docpath,target))
+        o.addText(' "%s":%s ' % (plain_text(tagElement.get_text()),os.path.join(o.docpath,target)))
         return
-      if target.find("sortcol") >= 0:
-        removeA = True
-        continue
-      ## Is it an attachment?
-      if target.find("/cgi-bin/twiki/bin/viewfile") >= 0:
-        ## Get the part after "filename="
-        fname = target.split("filename=")[1]
-        o.addText(" attachment:%s " % fname)
-        return
-      ## Is it a pub attachment
-      if target.find("/pub/"+o.area+"/"+o.page) >= 0:
-        ## Get the last part
-        fname = target.split("/")[-1]
-        o.addText(" attachment:%s " % fname)
-        return
-      if target.find("/cgi-bin/twiki/bin/view/") >= 0:
-        ## It's a Wiki target
-        isWikiTarget = True
-        targetParts = target.split("/")
-        wikiTarget = targetParts[-1]
-        o.addText(" [[%s|" % wikiTarget)
-        o.addWikiLink(targetParts[-2],targetParts[-1])
-      else:
-        o.addText(' "')
+    else:
+      print "NR in parseA: FIXME "
+      sys.exit(1)
   ## Do we have any contents?
   if tagElement.contents:
     parseContents(tagElement.contents, o, offset+2)
@@ -301,7 +282,7 @@ def main(args):
         outfile = opts.outdir+'/' + title + '.redmine'
         print "Output file: ", outfile
         o = WikiFromSoup(document, title, outfile)
-        o.set_docpath(opts.docpath)
+        o.set_docpath('file://' + opts.docpath)
         # We normally want to parse document body:
         t = document.find('body')
         parseTag(t, o, 0)
