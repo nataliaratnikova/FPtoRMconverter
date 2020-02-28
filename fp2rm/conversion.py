@@ -119,7 +119,8 @@ def parseTag(tagElement, o, offset):
     parseTextOut(tagElement, o, offset, " @", "@ ")
   elif tag == "pre":
     parseTextOut(tagElement, o, offset, "\n\n"+o.liOffset*" "+"<pre>\n", "\n"+" "*o.liOffset+"</pre>\n\n")
-  elif tag in ["p"]:
+  elif tag in ["p", "dl"]:
+    # Since definition list has  no text, treat it as a new paragraph
     parseTextOut(tagElement, o, offset, "\n\n", "")
   elif tag in ["br"]:
     parseTextOut(tagElement, o, offset, "\n", "")
