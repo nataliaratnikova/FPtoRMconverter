@@ -59,6 +59,19 @@ class TestConversion(unittest.TestCase):
         soup = conversion.clear_blank_lines(soup)
         print "cleared:", len(soup)
         self.assertEqual(len(soup), 1)
+    def test_document_title_from_title(self):
+        soup = conversion.soup_from_text(document)
+        res = conversion.get_document_title(soup)
+        self.assertEqual(res,'The Dormouses story')
+    def test_document_title_from_text(self):
+        soup = conversion.soup_from_text('''
+      <html> <head> </head> <body>  <p>  <b>
+    The 
+    Dormouse's 
+    story   </b>  </p> </body></html>
+        ''')
+        res = conversion.get_document_title(soup)
+        self.assertEqual(res,'The_Dormouses_story')
 
 if __name__ == '__main__':
     # I`m executing this file

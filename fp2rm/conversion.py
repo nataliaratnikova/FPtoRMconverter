@@ -9,7 +9,7 @@ import argparse
 import os.path
 import os
 import string
-
+docpath = 'file:///Users/natasha/DOCUMENTATION/contents/Operations/d/dba-team/internal/freeware/'
 class BadHTML(Exception):
     def __init__(self, value):
         self.value = value
@@ -46,6 +46,25 @@ def soup_from_text(txt):
 
 ### Document manipulation functions
 
+def clean_new_lines_from_text(txt):
+    '''removes all new lines and single quotes from a text, 
+can be easily extended to remove more special characters'''
+    txt=txt.strip()
+    return string.join([ c for c in txt if c not in ( u'\n', '\'')],'')
+
+def plain_text(txt):
+    '''removes repeated whitespaces, new lines from text'''
+    txt   = txt.replace('\n', ' ').strip()
+    clist = [c for c in txt if c != "\'"]
+    result=[]
+    previous=''
+    for c in clist:
+        if c == ' ' and previous == ' ':
+            continue
+        result.append(c)
+        previous = c 
+    return string.join(result, '')
+
 def clear_blank_lines(doc):
     ''' Removes useless contents containing just blank lines 
 from a BeautifulSoup top object (document)
@@ -64,16 +83,21 @@ def get_first_html_tag (doc):
     raise BadHTML(doc);
 
 def get_document_title (doc):
+    '''Takes beautiful soup document as an argument. If found, returns title tag specified 
+in the head section; otherwise takes first nonempty text from the closest document tag. 
+Converts text to a plain string using underscores as word breaks'''
     if isinstance(doc, BeautifulSoup):
         try:
-            return doc.html.head.title
+            return clean_new_lines_from_text(doc.html.head.title.string.strip())
         except:
             print "Warning: document has no title\n Using first line of page text."
-            for s in doc.body.contents:
-                if s.string.strip():
-                    return s.string.strip()
-            return None
-
+            for tag in doc.html.body.find_all():
+                #res = clean_new_lines_from_text(tag.get_text()).strip()
+                res = plain_text(tag.get_text())
+                if res:
+                    return res.replace(' ','_')
+    else:
+        print "ERROR: document must be a BeautifulSoup object! type: ", type(doc)
 ### Tag parsing functions adopted from Adam Lyon
 
 def parseTag(tagElement, o, offset):
@@ -185,13 +209,25 @@ def parseA(tagElement, o, offset):
   print offset*"-" + 'A:open'
   removeA = False
   isWikiTarget = False
-  for anAttr in tagElement.attrs:
-    if anAttr[0] == 'name':
+  ## NR: in bs4 attrs is a dict
+  for anAttr in tagElement.attrs.keys():
+    if anAttr == 'name':
       ## Don't do anything with names yet!
       print offset*"-" + "ATTR:name"
       removeA = True
-    elif anAttr[0] == "href":
-      target = anAttr[1]
+    elif anAttr == "href":
+      target = tagElement.attrs[anAttr]
+      print "NR in parseA, target: \'%s\'" % target
+      # if it is an internal document, prepend with a path to a local file
+      # and let the browser serve it accordingly
+      if target[:4] == 'http':
+        print "NR: link to external document, as target starts with http."
+        o.addText(' "%s":%s ' % (clean_new_lines_from_text(tagElement.get_text().strip()),target))
+        return
+      else:
+        print "NR: this is a link to internal document, using local file path"
+        o.addText('":%s ' % os.path.join(docpath,target))
+        return
       if target.find("sortcol") >= 0:
         removeA = True
         continue
