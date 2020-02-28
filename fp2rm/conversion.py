@@ -9,7 +9,7 @@ import argparse
 import os.path
 import os
 import string
-docpath = 'file:///Users/natasha/DOCUMENTATION/contents/Operations/d/dba-team/internal/freeware/'
+
 class BadHTML(Exception):
     def __init__(self, value):
         self.value = value
@@ -34,6 +34,8 @@ class WikiFromSoup:
         ## Write this out 
         text = string.join(self.textile, "")
         open("%s" % self.outfile, 'w').write(text+"\n")
+    def set_docpath(self, path):
+        self.docpath = path
 
 ###  Functions to get HTML document contents:
 
@@ -226,7 +228,7 @@ def parseA(tagElement, o, offset):
         return
       else:
         print "NR: this is a link to internal document, using local file path"
-        o.addText('":%s ' % os.path.join(docpath,target))
+        o.addText('":%s ' % os.path.join(o.docpath,target))
         return
       if target.find("sortcol") >= 0:
         removeA = True
@@ -271,10 +273,13 @@ def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('-f', '--file', 
         help='File to load',
-        default = '/users/natasha/DOCUMENTATION/contents/Operations/d/dba-team/internal/freeware/index.html')
+        default = './index.html')
     ap.add_argument('-o', '--outdir', 
         help='Where the results should go',
         default = '/tmp/fp2rm')
+    ap.add_argument('-d', '--docpath', 
+        help='Path do local documents to substitute in reference links',
+        default = '/tmp/fp2rm/Documents')
     opts = ap.parse_args(args)
     if opts.outdir:
         try:
@@ -296,6 +301,7 @@ def main(args):
         outfile = opts.outdir+'/' + title + '.redmine'
         print "Output file: ", outfile
         o = WikiFromSoup(document, title, outfile)
+        o.set_docpath(opts.docpath)
         # We normally want to parse document body:
         t = document.find('body')
         parseTag(t, o, 0)
