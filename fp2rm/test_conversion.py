@@ -1,6 +1,6 @@
 import unittest
-
 import conversion
+import string
 
 document='''
 <html>
@@ -72,6 +72,13 @@ class TestConversion(unittest.TestCase):
         ''')
         res = conversion.get_document_title(soup)
         self.assertEqual(res,'The_Dormouses_story')
+    def test_parseA(self):
+        soup = conversion.soup_from_text(document)
+        o = conversion.WikiFromSoup(soup,'TestParseA', None)
+        #o = conversion.WikiFromSoup(soup,'TestParseA', sys.stdout)
+        conversion.parseA(soup.find('a'), o, 0)
+        res=string.join(o.textile,'')
+        self.assertEqual(res,' "Elsie":http://example.com/elsie ')
 
 if __name__ == '__main__':
     # I`m executing this file
