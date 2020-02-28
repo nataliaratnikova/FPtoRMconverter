@@ -54,6 +54,14 @@ can be easily extended to remove more special characters'''
     txt=txt.strip()
     return string.join([ c for c in txt if c not in ( u'\n', '\'')],'')
 
+def replace_by_hr(txt):
+    # Use markup horizontal rule for lines consisting of 3 or more equal signs
+    if len (txt.strip()) >= 3:
+        check = [ c for c in txt.strip() if c != '=' ]
+        if not check:
+            return '\n\n---\n\n'
+    return txt
+
 def plain_text(txt):
     '''removes repeated whitespaces, new lines from text'''
     # Remove also MS windows left-overs (carriage return)
@@ -108,6 +116,8 @@ def parseTag(tagElement, o, offset):
   print "NR in parseTag:", offset*"-" + tag
 
   ## Handle the tag!
+  if tag == "hr":
+    o.addText('\n\n---\n')
   if tag == "a":
     parseA(tagElement, o, offset)
   elif tag in ["h1", "h2", "h3", "h4", "h5"]:
@@ -166,6 +176,7 @@ def parseContents(contents, o, offset):
     if isinstance(c, element.NavigableString):
       s = c.strip()
       print offset*"-" + 'text: %s' % s
+      s = replace_by_hr(s)
       o.addText(s)
     if isinstance(c, element.Tag):
       ## It's a tag! Parse it
